@@ -1,0 +1,899 @@
+tools_yaml_version: "1.0"
+
+tools:
+  # ─── Workout Records ──────────────────────────────────────────────────────
+
+  - name: get_workout_records_by_nickname
+    description: 특정 닉네임 사용자의 운동 기록 목록을 조회한다. 페이지네이션 지원.
+    endpoint: "GET /workouts/profiles/:nickname/workout-records"
+    response_type: table
+    response_mapping:
+      data_path: "records"
+    params:
+      nickname:
+        type: string
+        description: "조회할 사용자의 닉네임"
+        required: true
+      page:
+        type: number
+        description: "페이지 번호 (기본값: 1)"
+        required: false
+      limit:
+        type: number
+        description: "페이지당 항목 수 (기본값: 10)"
+        required: false
+    columns:
+      - key: workoutOfTheDaySeq
+        label: "기록 ID"
+        type: number
+      - key: workoutDate
+        label: "운동 날짜"
+        type: date
+      - key: placeName
+        label: "운동 장소"
+        type: string
+      - key: likeCount
+        label: "좋아요 수"
+        type: number
+
+  - name: get_workout_record_detail
+    description: 특정 운동 기록의 상세 정보를 조회한다.
+    endpoint: "GET /workouts/profiles/workout-records/:workoutOfTheDaySeq"
+    response_type: text
+    params:
+      workoutOfTheDaySeq:
+        type: number
+        description: "조회할 운동 기록 ID"
+        required: true
+
+  - name: get_workout_records_count_by_nickname
+    description: 특정 닉네임 사용자의 전체 운동 기록 수를 조회한다.
+    endpoint: "GET /workouts/profiles/:nickname/workout-records-count"
+    response_type: text
+    params:
+      nickname:
+        type: string
+        description: "조회할 사용자의 닉네임"
+        required: true
+
+  - name: get_recent_workout_records
+    description: 현재 로그인한 사용자의 최근 운동 기록 목록을 조회한다. 인증 필요.
+    endpoint: "GET /workouts/workout-records/recent"
+    response_type: table
+    response_mapping:
+      data_path: "records"
+    columns:
+      - key: workoutOfTheDaySeq
+        label: "기록 ID"
+        type: number
+      - key: workoutDate
+        label: "운동 날짜"
+        type: date
+      - key: placeName
+        label: "운동 장소"
+        type: string
+
+  - name: delete_workout_record
+    description: 특정 운동 기록을 소프트 삭제한다. 인증 필요.
+    endpoint: "DELETE /workouts/workout-records/:workoutOfTheDaySeq"
+    risk_level: write
+    confirm_message: "운동 기록 {workoutOfTheDaySeq}를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+    response_type: text
+    params:
+      workoutOfTheDaySeq:
+        type: number
+        description: "삭제할 운동 기록 ID"
+        required: true
+
+  - name: update_workout_record
+    description: 특정 운동 기록의 내용을 수정한다. 인증 필요.
+    endpoint: "PUT /workouts/workout-records/:workoutOfTheDaySeq"
+    risk_level: write
+    confirm_message: "운동 기록 {workoutOfTheDaySeq}를 수정하시겠습니까?"
+    response_type: text
+    params:
+      workoutOfTheDaySeq:
+        type: number
+        description: "수정할 운동 기록 ID"
+        required: true
+      content:
+        type: string
+        description: "수정할 운동 기록 내용"
+        required: false
+
+  - name: get_workout_records_by_place
+    description: 특정 운동 장소의 운동 기록 목록을 조회한다.
+    endpoint: "GET /workouts/places/:placeSeq/workout-records"
+    response_type: table
+    response_mapping:
+      data_path: "records"
+    params:
+      placeSeq:
+        type: number
+        description: "조회할 운동 장소 ID"
+        required: true
+      page:
+        type: number
+        description: "페이지 번호 (기본값: 1)"
+        required: false
+      limit:
+        type: number
+        description: "페이지당 항목 수 (기본값: 10)"
+        required: false
+    columns:
+      - key: workoutOfTheDaySeq
+        label: "기록 ID"
+        type: number
+      - key: workoutDate
+        label: "운동 날짜"
+        type: date
+      - key: nickname
+        label: "작성자"
+        type: string
+
+  - name: get_workout_records_count_by_place
+    description: 특정 운동 장소의 전체 운동 기록 수를 조회한다.
+    endpoint: "GET /workouts/places/:placeSeq/workout-records-count"
+    response_type: text
+    params:
+      placeSeq:
+        type: number
+        description: "조회할 운동 장소 ID"
+        required: true
+
+  - name: get_monthly_workout_dates
+    description: 특정 닉네임 사용자의 월별 운동 날짜 목록을 조회한다.
+    endpoint: "GET /workouts/profiles/:nickname/workout-records/monthly"
+    response_type: table
+    response_mapping:
+      data_path: "dates"
+    params:
+      nickname:
+        type: string
+        description: "조회할 사용자의 닉네임"
+        required: true
+      year:
+        type: number
+        description: "조회할 연도 (예: 2024)"
+        required: false
+      month:
+        type: number
+        description: "조회할 월 (1-12)"
+        required: false
+    columns:
+      - key: date
+        label: "운동 날짜"
+        type: date
+
+  # ─── Workout Likes ────────────────────────────────────────────────────────
+
+  - name: toggle_workout_like
+    description: 특정 운동 기록에 좋아요를 추가하거나 취소한다. 인증 필요.
+    endpoint: "POST /workouts/workout-records/:workoutOfTheDaySeq/like"
+    risk_level: write
+    confirm_message: "운동 기록 {workoutOfTheDaySeq}에 좋아요를 토글하시겠습니까?"
+    response_type: text
+    params:
+      workoutOfTheDaySeq:
+        type: number
+        description: "좋아요를 토글할 운동 기록 ID"
+        required: true
+
+  - name: get_workout_like_status
+    description: 특정 운동 기록에 대한 현재 사용자의 좋아요 상태를 조회한다.
+    endpoint: "GET /workouts/workout-records/:workoutOfTheDaySeq/like"
+    response_type: text
+    params:
+      workoutOfTheDaySeq:
+        type: number
+        description: "조회할 운동 기록 ID"
+        required: true
+
+  - name: get_workout_like_count
+    description: 특정 운동 기록의 좋아요 수를 조회한다.
+    endpoint: "GET /workouts/workout-records/:workoutOfTheDaySeq/like-count"
+    response_type: text
+    params:
+      workoutOfTheDaySeq:
+        type: number
+        description: "조회할 운동 기록 ID"
+        required: true
+
+  # ─── Comments ─────────────────────────────────────────────────────────────
+
+  - name: get_comments
+    description: 특정 운동 기록의 댓글 목록을 조회한다.
+    endpoint: "GET /workouts/:workoutOfTheDaySeq/comments"
+    response_type: table
+    response_mapping:
+      data_path: "comments"
+    params:
+      workoutOfTheDaySeq:
+        type: number
+        description: "댓글을 조회할 운동 기록 ID"
+        required: true
+    columns:
+      - key: commentSeq
+        label: "댓글 ID"
+        type: number
+      - key: nickname
+        label: "작성자"
+        type: string
+      - key: content
+        label: "내용"
+        type: string
+      - key: createdAt
+        label: "작성일"
+        type: date
+
+  - name: create_comment
+    description: 특정 운동 기록에 댓글을 작성한다. 인증 필요.
+    endpoint: "POST /workouts/:workoutOfTheDaySeq/comments"
+    risk_level: write
+    confirm_message: "운동 기록 {workoutOfTheDaySeq}에 댓글을 작성하시겠습니까?"
+    response_type: text
+    params:
+      workoutOfTheDaySeq:
+        type: number
+        description: "댓글을 작성할 운동 기록 ID"
+        required: true
+      content:
+        type: string
+        description: "댓글 내용"
+        required: true
+
+  - name: update_comment
+    description: 특정 댓글의 내용을 수정한다. 인증 필요.
+    endpoint: "PUT /workouts/comments/:commentSeq"
+    risk_level: write
+    confirm_message: "댓글 {commentSeq}를 수정하시겠습니까?"
+    response_type: text
+    params:
+      commentSeq:
+        type: number
+        description: "수정할 댓글 ID"
+        required: true
+      content:
+        type: string
+        description: "수정할 댓글 내용"
+        required: true
+
+  - name: delete_comment
+    description: 특정 댓글을 삭제한다. 인증 필요.
+    endpoint: "DELETE /workouts/comments/:commentSeq"
+    risk_level: write
+    confirm_message: "댓글 {commentSeq}를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+    response_type: text
+    params:
+      commentSeq:
+        type: number
+        description: "삭제할 댓글 ID"
+        required: true
+
+  - name: toggle_comment_like
+    description: 특정 댓글에 좋아요를 추가하거나 취소한다. 인증 필요.
+    endpoint: "POST /workouts/comments/:commentSeq/like"
+    risk_level: write
+    confirm_message: "댓글 {commentSeq}에 좋아요를 토글하시겠습니까?"
+    response_type: text
+    params:
+      commentSeq:
+        type: number
+        description: "좋아요를 토글할 댓글 ID"
+        required: true
+
+  - name: get_comment_replies
+    description: 특정 댓글의 대댓글 목록을 조회한다.
+    endpoint: "GET /workouts/comments/:commentSeq/replies"
+    response_type: table
+    response_mapping:
+      data_path: "replies"
+    params:
+      commentSeq:
+        type: number
+        description: "대댓글을 조회할 댓글 ID"
+        required: true
+    columns:
+      - key: commentSeq
+        label: "댓글 ID"
+        type: number
+      - key: nickname
+        label: "작성자"
+        type: string
+      - key: content
+        label: "내용"
+        type: string
+
+  # ─── Workout Places ───────────────────────────────────────────────────────
+
+  - name: get_recent_workout_places
+    description: 현재 로그인한 사용자가 최근 이용한 운동 장소 목록을 조회한다. 인증 필요.
+    endpoint: "GET /workout-places/recent"
+    response_type: table
+    response_mapping:
+      data_path: "places"
+    columns:
+      - key: placeSeq
+        label: "장소 ID"
+        type: number
+      - key: placeName
+        label: "장소명"
+        type: string
+      - key: lastVisited
+        label: "최근 방문일"
+        type: date
+
+  # ─── Search ───────────────────────────────────────────────────────────────
+
+  - name: search_users
+    description: 닉네임으로 사용자를 검색한다.
+    endpoint: "GET /search/users"
+    response_type: table
+    response_mapping:
+      data_path: "users"
+    params:
+      query:
+        type: string
+        description: "검색할 닉네임 키워드"
+        required: true
+      page:
+        type: number
+        description: "페이지 번호 (기본값: 1)"
+        required: false
+      limit:
+        type: number
+        description: "페이지당 항목 수 (기본값: 10)"
+        required: false
+    columns:
+      - key: userSeq
+        label: "사용자 ID"
+        type: number
+      - key: nickname
+        label: "닉네임"
+        type: string
+      - key: profileImage
+        label: "프로필 이미지"
+        type: string
+
+  - name: search_workout_places
+    description: 이름으로 운동 장소를 검색한다.
+    endpoint: "GET /search/places"
+    response_type: table
+    response_mapping:
+      data_path: "places"
+    params:
+      query:
+        type: string
+        description: "검색할 장소명 키워드"
+        required: true
+      page:
+        type: number
+        description: "페이지 번호 (기본값: 1)"
+        required: false
+      limit:
+        type: number
+        description: "페이지당 항목 수 (기본값: 10)"
+        required: false
+    columns:
+      - key: placeSeq
+        label: "장소 ID"
+        type: number
+      - key: placeName
+        label: "장소명"
+        type: string
+      - key: address
+        label: "주소"
+        type: string
+
+  # ─── Follow ───────────────────────────────────────────────────────────────
+
+  - name: follow_user
+    description: 특정 사용자를 팔로우한다. 인증 필요.
+    endpoint: "POST /follow/user"
+    risk_level: write
+    confirm_message: "해당 사용자를 팔로우하시겠습니까?"
+    response_type: text
+    params:
+      followingUserSeq:
+        type: number
+        description: "팔로우할 사용자 ID"
+        required: true
+
+  - name: unfollow_user
+    description: 특정 사용자를 언팔로우한다. 인증 필요.
+    endpoint: "DELETE /follow/user/:followingUserSeq"
+    risk_level: write
+    confirm_message: "사용자 {followingUserSeq}를 언팔로우하시겠습니까?"
+    response_type: text
+    params:
+      followingUserSeq:
+        type: number
+        description: "언팔로우할 사용자 ID"
+        required: true
+
+  - name: follow_place
+    description: 특정 운동 장소를 팔로우한다. 인증 필요.
+    endpoint: "POST /follow/place"
+    risk_level: write
+    confirm_message: "해당 운동 장소를 팔로우하시겠습니까?"
+    response_type: text
+    params:
+      workoutPlaceSeq:
+        type: number
+        description: "팔로우할 운동 장소 ID"
+        required: true
+
+  - name: unfollow_place
+    description: 특정 운동 장소를 언팔로우한다. 인증 필요.
+    endpoint: "DELETE /follow/place/:workoutPlaceSeq"
+    risk_level: write
+    confirm_message: "운동 장소 {workoutPlaceSeq}를 언팔로우하시겠습니까?"
+    response_type: text
+    params:
+      workoutPlaceSeq:
+        type: number
+        description: "언팔로우할 운동 장소 ID"
+        required: true
+
+  - name: get_followers
+    description: 특정 사용자의 팔로워 목록을 조회한다.
+    endpoint: "GET /follow/followers/:userSeq"
+    response_type: table
+    response_mapping:
+      data_path: "followers"
+    params:
+      userSeq:
+        type: number
+        description: "팔로워를 조회할 사용자 ID"
+        required: true
+    columns:
+      - key: userSeq
+        label: "사용자 ID"
+        type: number
+      - key: nickname
+        label: "닉네임"
+        type: string
+
+  - name: get_following
+    description: 특정 사용자가 팔로우하는 사용자 목록을 조회한다.
+    endpoint: "GET /follow/following/:userSeq"
+    response_type: table
+    response_mapping:
+      data_path: "following"
+    params:
+      userSeq:
+        type: number
+        description: "팔로잉을 조회할 사용자 ID"
+        required: true
+    columns:
+      - key: userSeq
+        label: "사용자 ID"
+        type: number
+      - key: nickname
+        label: "닉네임"
+        type: string
+
+  - name: get_following_places
+    description: 특정 사용자가 팔로우하는 운동 장소 목록을 조회한다.
+    endpoint: "GET /follow/place/:userSeq"
+    response_type: table
+    response_mapping:
+      data_path: "places"
+    params:
+      userSeq:
+        type: number
+        description: "팔로우 중인 장소를 조회할 사용자 ID"
+        required: true
+    columns:
+      - key: placeSeq
+        label: "장소 ID"
+        type: number
+      - key: placeName
+        label: "장소명"
+        type: string
+
+  - name: get_follow_counts
+    description: 특정 사용자의 팔로워 수와 팔로잉 수를 조회한다.
+    endpoint: "GET /follow/counts/:userSeq"
+    response_type: text
+    params:
+      userSeq:
+        type: number
+        description: "팔로우 수를 조회할 사용자 ID"
+        required: true
+
+  - name: check_user_follow_status
+    description: 현재 사용자가 특정 사용자를 팔로우하고 있는지 확인한다.
+    endpoint: "GET /follow/status/user/:followingUserSeq"
+    response_type: text
+    params:
+      followingUserSeq:
+        type: number
+        description: "팔로우 상태를 확인할 대상 사용자 ID"
+        required: true
+
+  - name: check_place_follow_status
+    description: 현재 사용자가 특정 운동 장소를 팔로우하고 있는지 확인한다.
+    endpoint: "GET /follow/status/place/:workoutPlaceSeq"
+    response_type: text
+    params:
+      workoutPlaceSeq:
+        type: number
+        description: "팔로우 상태를 확인할 운동 장소 ID"
+        required: true
+
+  - name: get_place_follower_count
+    description: 특정 운동 장소의 팔로워 수를 조회한다.
+    endpoint: "GET /follow/count/place/:workoutPlaceSeq"
+    response_type: text
+    params:
+      workoutPlaceSeq:
+        type: number
+        description: "팔로워 수를 조회할 운동 장소 ID"
+        required: true
+
+  # ─── User Profile ─────────────────────────────────────────────────────────
+
+  - name: get_user_profile_image
+    description: 특정 닉네임 사용자의 프로필 이미지 URL을 조회한다.
+    endpoint: "GET /users/profile-image/:userNickname"
+    response_type: text
+    params:
+      userNickname:
+        type: string
+        description: "프로필 이미지를 조회할 사용자의 닉네임"
+        required: true
+
+  - name: check_profile_ownership
+    description: 현재 로그인한 사용자가 특정 닉네임의 프로필 소유자인지 확인한다.
+    endpoint: "GET /users/check-profile-ownership/:userNickname"
+    response_type: text
+    params:
+      userNickname:
+        type: string
+        description: "소유권을 확인할 프로필의 닉네임"
+        required: true
+
+  - name: get_user_seq_by_nickname
+    description: 닉네임으로 사용자의 고유 ID(seq)를 조회한다.
+    endpoint: "GET /users/seq/:userNickname"
+    response_type: text
+    params:
+      userNickname:
+        type: string
+        description: "seq를 조회할 사용자의 닉네임"
+        required: true
+
+  - name: get_user_profile_info
+    description: 특정 닉네임 사용자의 프로필 정보(닉네임, 소개, 통계 등)를 조회한다.
+    endpoint: "GET /users/profile-info/:userNickname"
+    response_type: text
+    params:
+      userNickname:
+        type: string
+        description: "프로필 정보를 조회할 사용자의 닉네임"
+        required: true
+
+  # ─── Feed ─────────────────────────────────────────────────────────────────
+
+  - name: get_feed
+    description: 현재 로그인한 사용자의 피드(팔로우한 사용자·장소의 최신 운동 기록)를 조회한다. 인증 필요.
+    endpoint: "GET /feed/"
+    response_type: table
+    response_mapping:
+      data_path: "records"
+    params:
+      page:
+        type: number
+        description: "페이지 번호 (기본값: 1)"
+        required: false
+      limit:
+        type: number
+        description: "페이지당 항목 수 (기본값: 10)"
+        required: false
+    columns:
+      - key: workoutOfTheDaySeq
+        label: "기록 ID"
+        type: number
+      - key: nickname
+        label: "작성자"
+        type: string
+      - key: workoutDate
+        label: "운동 날짜"
+        type: date
+      - key: placeName
+        label: "운동 장소"
+        type: string
+
+  # ─── Statistics ───────────────────────────────────────────────────────────
+
+  - name: get_body_log_stats
+    description: 현재 로그인한 사용자의 바디로그(체중·체지방 등) 통계를 조회한다. 인증 필요.
+    endpoint: "GET /statistics/body-log-stats"
+    response_type: table
+    response_mapping:
+      data_path: "stats"
+    params:
+      period:
+        type: string
+        description: "조회 기간 (1months|3months|6months|1year|2years|all, 기본값: 1year)"
+        required: false
+        enum: ["1months", "3months", "6months", "1year", "2years", "all"]
+      interval:
+        type: string
+        description: "집계 간격 (1week|2weeks|4weeks|3months|all, 기본값: 1week)"
+        required: false
+        enum: ["1week", "2weeks", "4weeks", "3months", "all"]
+    columns:
+      - key: date
+        label: "날짜"
+        type: date
+      - key: weight
+        label: "체중 (kg)"
+        type: number
+      - key: bodyFat
+        label: "체지방률 (%)"
+        type: number
+
+  - name: get_exercise_weight_stats
+    description: 현재 로그인한 사용자의 특정 운동 종목 무게 변화 통계를 조회한다. 인증 필요.
+    endpoint: "GET /statistics/exercise-weight-stats"
+    response_type: table
+    response_mapping:
+      data_path: "stats"
+    params:
+      period:
+        type: string
+        description: "조회 기간 (1months|3months|6months|1year|2years|all, 기본값: 3months)"
+        required: false
+        enum: ["1months", "3months", "6months", "1year", "2years", "all"]
+      interval:
+        type: string
+        description: "집계 간격 (1week|2weeks|4weeks|3months|all, 기본값: all)"
+        required: false
+        enum: ["1week", "2weeks", "4weeks", "3months", "all"]
+      rm:
+        type: string
+        description: "반복 수 기준 (1RM|5RM|over8RM, 기본값: over8RM)"
+        required: false
+        enum: ["1RM", "5RM", "over8RM"]
+      exerciseSeqs:
+        type: array
+        description: "조회할 운동 종목 ID 목록 (최소 1개, 최대 5개)"
+        required: true
+    columns:
+      - key: date
+        label: "날짜"
+        type: date
+      - key: exerciseName
+        label: "운동명"
+        type: string
+      - key: weight
+        label: "무게 (kg)"
+        type: number
+
+  - name: get_cardio_stats
+    description: 현재 로그인한 사용자의 유산소 운동 통계를 조회한다. 인증 필요.
+    endpoint: "GET /statistics/cardio-stats"
+    response_type: table
+    response_mapping:
+      data_path: "stats"
+    params:
+      period:
+        type: string
+        description: "조회 기간 (1months|3months|6months|1year|2years|all, 기본값: 3months)"
+        required: false
+        enum: ["1months", "3months", "6months", "1year", "2years", "all"]
+      exerciseSeqs:
+        type: array
+        description: "조회할 유산소 운동 종목 ID 목록 (선택사항)"
+        required: false
+    columns:
+      - key: date
+        label: "날짜"
+        type: date
+      - key: exerciseName
+        label: "운동명"
+        type: string
+      - key: duration
+        label: "시간 (분)"
+        type: number
+
+  - name: get_body_part_volume_stats
+    description: 현재 로그인한 사용자의 신체 부위별 운동 볼륨 통계를 조회한다. 인증 필요.
+    endpoint: "GET /statistics/body-part-volume-stats"
+    response_type: table
+    response_mapping:
+      data_path: "stats"
+    params:
+      period:
+        type: string
+        description: "조회 기간 (1months|3months|6months|1year|2years|all, 기본값: 3months)"
+        required: false
+        enum: ["1months", "3months", "6months", "1year", "2years", "all"]
+      interval:
+        type: string
+        description: "집계 간격 (1week|2weeks|1month|3months|all, 기본값: 1week)"
+        required: false
+        enum: ["1week", "2weeks", "1month", "3months", "all"]
+      bodyPart:
+        type: string
+        description: "신체 부위 (all|chest|back|legs|shoulders|triceps|biceps, 기본값: all)"
+        required: false
+        enum: ["all", "chest", "back", "legs", "shoulders", "triceps", "biceps"]
+    columns:
+      - key: date
+        label: "날짜"
+        type: date
+      - key: bodyPart
+        label: "부위"
+        type: string
+      - key: volume
+        label: "볼륨 (kg)"
+        type: number
+
+  # ─── Body Logs ────────────────────────────────────────────────────────────
+
+  - name: get_body_logs
+    description: 현재 로그인한 사용자의 바디로그 목록을 조회한다. 인증 필요.
+    endpoint: "GET /users/body-logs"
+    response_type: table
+    response_mapping:
+      data_path: "bodyLogs"
+    columns:
+      - key: bodyLogSeq
+        label: "바디로그 ID"
+        type: number
+      - key: date
+        label: "기록 날짜"
+        type: date
+      - key: weight
+        label: "체중 (kg)"
+        type: number
+      - key: bodyFat
+        label: "체지방률 (%)"
+        type: number
+
+  - name: get_latest_body_log
+    description: 현재 로그인한 사용자의 가장 최신 바디로그를 조회한다. 인증 필요.
+    endpoint: "GET /users/body-logs/latest"
+    response_type: text
+
+  - name: save_body_log
+    description: 현재 로그인한 사용자의 바디로그(체중, 체지방 등)를 저장한다. 인증 필요.
+    endpoint: "POST /users/body-logs"
+    risk_level: write
+    confirm_message: "바디로그를 저장하시겠습니까?"
+    response_type: text
+    params:
+      weight:
+        type: number
+        description: "체중 (kg)"
+        required: false
+      bodyFat:
+        type: number
+        description: "체지방률 (%)"
+        required: false
+      date:
+        type: string
+        description: "기록 날짜 (YYYY-MM-DD)"
+        required: false
+
+  - name: delete_body_log
+    description: 특정 바디로그를 삭제한다. 인증 필요.
+    endpoint: "DELETE /users/body-logs/:bodyLogSeq"
+    risk_level: write
+    confirm_message: "바디로그 {bodyLogSeq}를 삭제하시겠습니까?"
+    response_type: text
+    params:
+      bodyLogSeq:
+        type: number
+        description: "삭제할 바디로그 ID"
+        required: true
+
+  # ─── Exercises ────────────────────────────────────────────────────────────
+
+  - name: get_all_exercises
+    description: 시스템에 등록된 모든 운동 종목 목록을 조회한다.
+    endpoint: "GET /exercises/exercises"
+    response_type: table
+    response_mapping:
+      data_path: "exercises"
+    columns:
+      - key: exerciseSeq
+        label: "운동 ID"
+        type: number
+      - key: exerciseName
+        label: "운동명"
+        type: string
+      - key: bodyPart
+        label: "부위"
+        type: string
+
+  # ─── Notifications ────────────────────────────────────────────────────────
+
+  - name: get_notifications
+    description: 현재 로그인한 사용자의 알림 목록을 조회한다. 인증 필요.
+    endpoint: "GET /notifications/"
+    response_type: table
+    response_mapping:
+      data_path: "notifications"
+    columns:
+      - key: notificationSeq
+        label: "알림 ID"
+        type: number
+      - key: type
+        label: "유형"
+        type: badge
+      - key: message
+        label: "내용"
+        type: string
+      - key: createdAt
+        label: "생성일"
+        type: date
+      - key: isRead
+        label: "읽음 여부"
+        type: string
+
+  - name: get_unread_notifications
+    description: 현재 로그인한 사용자의 읽지 않은 알림 목록을 조회한다. 인증 필요.
+    endpoint: "GET /notifications/unread"
+    response_type: table
+    response_mapping:
+      data_path: "notifications"
+    columns:
+      - key: notificationSeq
+        label: "알림 ID"
+        type: number
+      - key: type
+        label: "유형"
+        type: badge
+      - key: message
+        label: "내용"
+        type: string
+      - key: createdAt
+        label: "생성일"
+        type: date
+
+  - name: get_notification_count
+    description: 현재 로그인한 사용자의 읽지 않은 알림 수를 조회한다. 인증 필요.
+    endpoint: "GET /notifications/count"
+    response_type: text
+
+  - name: mark_notifications_as_read
+    description: 특정 알림들을 읽음 처리한다. 인증 필요.
+    endpoint: "PATCH /notifications/read"
+    risk_level: write
+    confirm_message: "선택한 알림을 읽음 처리하시겠습니까?"
+    response_type: text
+    params:
+      notificationSeqs:
+        type: array
+        description: "읽음 처리할 알림 ID 목록"
+        required: true
+
+  - name: mark_all_notifications_as_read
+    description: 모든 알림을 읽음 처리한다. 인증 필요.
+    endpoint: "PATCH /notifications/read/all"
+    risk_level: write
+    confirm_message: "모든 알림을 읽음 처리하시겠습니까?"
+    response_type: text
+
+  - name: delete_notification
+    description: 특정 알림을 삭제한다. 인증 필요.
+    endpoint: "DELETE /notifications/:notificationSeq"
+    risk_level: write
+    confirm_message: "알림 {notificationSeq}를 삭제하시겠습니까?"
+    response_type: text
+    params:
+      notificationSeq:
+        type: number
+        description: "삭제할 알림 ID"
+        required: true
+
+  - name: delete_all_notifications
+    description: 모든 알림을 삭제한다. 인증 필요.
+    endpoint: "DELETE /notifications/all"
+    risk_level: critical
+    confirm_message: "모든 알림을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+    response_type: text
