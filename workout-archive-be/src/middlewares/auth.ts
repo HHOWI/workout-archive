@@ -19,7 +19,9 @@ export const authenticateToken = (
   res: Response,
   next: NextFunction
 ) => {
-  const token = req.cookies.auth_token;
+  const token: string | undefined =
+    req.cookies?.auth_token ??
+    req.headers.authorization?.replace('Bearer ', '');
 
   if (!token) {
     throw new CustomError("인증이 필요합니다.", 401);
@@ -43,7 +45,9 @@ export const optionalAuthenticateToken = (
   res: Response,
   next: NextFunction
 ) => {
-  const token = req.cookies.auth_token;
+  const token: string | undefined =
+    req.cookies?.auth_token ??
+    req.headers.authorization?.replace('Bearer ', '');
 
   if (!token) {
     req.user = undefined;
@@ -60,13 +64,15 @@ export const optionalAuthenticateToken = (
   } catch (error) {
     // 토큰이 유효하지 않거나 만료된 경우 req.user를 undefined로 설정하고 계속 진행
     req.user = undefined;
-    // 만료된 토큰 쿠키 삭제 (선택적)
-    res.clearCookie("auth_token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
-    });
+    // 만료된 토큰 쿠키 삭제 (선택적) — 쿠키 기반 요청에서만 수행
+    if (req.cookies?.auth_token) {
+      res.clearCookie("auth_token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/",
+      });
+    }
     next();
   }
 };
