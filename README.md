@@ -23,6 +23,8 @@ workout-archive/
 └── screenshots/         # 리드미 에셋 (이미지, GIF)
 ```
 
+---
+
 ## 📝 프로젝트 개요
 
 **Workout Archive**는 사용자가 운동 기록을 상세하게 저장하고, 다른 사용자와 공유하며 소통할 수 있는 풀스택 웹 애플리케이션입니다. 사용자 친화적인 UI/UX와 **운동 장소 기반의 소셜 네트워킹 기능**을 결합하여 운동 경험을 향상시키고, 이를 통해 **지역 커뮤니티 활성화 또한 기대**합니다.
@@ -63,7 +65,7 @@ workout-archive/
 | 구분           | 기술                                                                                                                                                                   |
 | :------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **공통**       | `TypeScript`                                                                                                                                                           |
-| **백엔드**     | `Node.js`, `Express.js`, `TypeORM` (PostgreSQL), `JWT`, `bcrypt`, `Socket.IO`, `Sharp`, `Zod`, `node-cron`, `Express Async Handler` |
+| **백엔드**     | `Node.js`, `Express.js`, `TypeORM` (PostgreSQL), `JWT`, `bcrypt`, `Socket.IO`, `Sharp` (이미지 처리), `Zod` (유효성 검증), `node-cron` (스케줄링), `Express Async Handler` |
 | **프론트엔드** | `React`, `Redux`, `React Router`, `Emotion`, `Material-UI`, `Axios`, `React Calendar`, `Chart.js`, `React Chart.js`, `Kakao Maps API`, `Socket.IO Client`, `uuid`      |
 | **개발 도구**  | `Git`, `GitHub`, `ESLint`, `Prettier`, `dotenv`                                                                                                                        |
 
@@ -73,70 +75,161 @@ workout-archive/
 
 - **RESTful API 설계:** 자원 중심의 일관된 API 엔드포인트 설계
 - **Controller-Service-Repository 패턴:** 역할 분리를 통한 코드의 모듈성 및 유지보수성 향상
-- **🔐 인증 및 보안:**
-  - JWT 기반 사용자 인증 시스템 구현 (HttpOnly 쿠키 저장)
+  - **Controller:** HTTP 요청 처리, 데이터 유효성 검증 (Zod 활용), Service 호출, 조율
+  - **Service:** 핵심 비즈니스 로직 구현 (단일 책임 원칙 준수), 트랜잭션 관리
+  - **Repository:** TypeORM을 활용한 데이터베이스 접근 추상화
+- **🔐 인증 및 보안**
+
+  - JWT 기반 사용자 인증 시스템 구현
+  - 로그인 시 JWT를 HttpOnly 쿠키에 저장하여 XSS 공격 방지
+  - 쿠키 `sameSite`, `secure` 옵션 적용으로 CSRF 공격 위험 최소화
   - bcrypt 해싱을 통한 비밀번호 암호화
+  - 미들웨어를 통한 API 접근 제어 (필수/선택적 인증) 및 리소스 소유권 검증
+
+  ```ts
+  // 쿠키에 JWT 저장 (UserController.ts)
+  res.cookie("auth_token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: Number(process.env.MAX_COOKIE_AGE),
+    path: "/",
+  });
+  ```
+
 - **🖼️ 온디맨드 이미지 처리 및 캐싱:**
-  - `Sharp` 라이브러리를 활용한 실시간 리사이징 및 파일 시스템 캐싱
+
+  - `Sharp` 라이브러리를 활용한 실시간 이미지 처리 (리사이징, 포맷 변환, 품질 조정) - URL 쿼리 파라미터(`w`, `h`, `q`, `f`) 기반
+  - 변환된 이미지를 파일 시스템에 캐싱하여 반복 요청 처리 속도 향상 및 서버 부하 감소 (캐시 키: `경로-w값-h값-q값-f값`)
+  - `setInterval`을 이용한 주기적인 캐시 파일 정리 (`CacheManager`, 예: 24시간)
+
+  ```typescript
+  // 이미지 처리 미들웨어 (imageProcessor.ts - 일부)
+  // ... 캐시 확인 로직 ...
+  // 캐시된 이미지가 없으면 처리 진행
+  let pipeline = sharp(imagePath);
+
+  // 리사이징
+  if (width > 0 || height > 0) {
+    pipeline = pipeline.resize(width || null, height || null, {
+      fit: "inside",
+      withoutEnlargement: true,
+    });
+  }
+
+  // 포맷 변환 및 품질 적용
+  switch (format) {
+    case "webp":
+      pipeline = pipeline.webp({ quality });
+      break;
+    case "png":
+      pipeline = pipeline.png({ quality: quality / 100 });
+      break;
+    default:
+      pipeline = pipeline.jpeg({ quality });
+  }
+
+  // 처리된 이미지를 캐시 파일로 저장
+  await pipeline.toFile(cachePath);
+
+  // 응답
+  res.sendFile(cachePath);
+  ```
+
 - **🔔 실시간 알림 시스템 (Socket.IO):**
-  - 싱글톤 소켓 매니저를 통한 실시간 이벤트(좋아요, 댓글 등) 전송
+
+  - `Socket.IO`를 사용한 실시간 알림 전송 (좋아요, 댓글, 팔로우 등)
+  - `SocketServerManager` (싱글톤)를 통한 웹소켓 서버 초기화 및 관리
+  - 클라이언트 연결 시 JWT 기반 사용자 인증 (`authenticate` 이벤트, HttpOnly 쿠키 검증)
+  - 사용자별 소켓 연결 관리 (`Map<userSeq, socket.id>`) 및 타겟 알림 전송
+
+  ```typescript
+  // 소켓 서버 설정 및 인증 (SocketServerManager.ts - 일부)
+  this.io.on(SocketEvent.CONNECT, (socket: ClientSocket) => {
+    socket.on(SocketEvent.AUTHENTICATE, async (data: AuthPayload) => {
+      // ... 쿠키에서 JWT 토큰 추출 및 검증 ...
+      const decodedToken = verifyToken(token) as JwtPayload;
+      const userSeq = decodedToken.userSeq as number;
+      socket.userSeq = userSeq;
+      // ... userSockets 맵에 사용자 정보 저장 ...
+    });
+  });
+  ```
+
+- **🔒 데이터 유효성 검증 (Zod):**
+
+  - `Zod` 라이브러리를 사용한 요청 데이터(body, query, params) 타입 및 형식 검증
+  - 스키마 정의(`schema/`) 및 `ValidationUtil`을 통한 검증 로직 추상화
+
+- **🚨 중앙 집중식 에러 핸들링:**
+
+  - `CustomError` 클래스와 `globalErrorHandler` 미들웨어를 사용한 애플리케이션 전역 에러 처리
+
+### 데이터베이스 설계 (ERD)
+
+<img src="./screenshots/ERD.PNG" alt="ERD" width="1200">
 
 ### 프론트엔드
 
-- **컴포넌트 기반 아키텍처:** MUI와 Emotion을 활용한 디자인 시스템 구축
-- **상태 관리:** Redux Toolkit을 통한 효율적인 전역 상태 관리
-- **📌 알림 상호작용:** 알림 클릭 시 해당 댓글로 부드러운 스크롤 이동 및 포커싱
+- **컴포넌트 기반 아키텍처:** 재사용 가능한 UI 컴포넌트(카드, 모달, 폼, 차트 등) 설계 및 관심사 분리
+- **상태 관리:** `Redux` (전역 상태: 사용자 인증, 테마 등) 및 `React Context API` (지역적 상태) 활용
+- **라우팅 및 접근 제어:** `React Router` 기반 라우팅 및 `ProtectedRoute` 관리
+- **지도 연동:** `Kakao Maps API`를 활용하여 운동 장소 검색 및 지도 표시
+- **📌 알림 상호작용:** 알림 클릭 시(`NotificationItem`) 타입에 따른 분기 처리 및 부드러운 스크롤 이동 기능
 
-## 데이터베이스 설계 (ERD)
+## 📈 개발 과정 및 배운 점
 
-<img src="./screenshots/ERD.PNG" alt="ERD" width="1200">
+### 주요 학습 내용
+
+- **TypeScript**의 정적 타이핑을 활용하여 코드 안정성 향상
+- **TypeORM**을 이용한 객체 지향적 DB 관리 및 PostgreSQL 포팅 경험
+- **React/Redux** 기반의 상태 관리 아키텍처 설계
+- **Controller-Service-Repository** 패턴 적용을 통한 백엔드 모듈화
+- **Socket.IO**를 활용한 실시간 웹 기능 구현 및 웹소켓 관리 경험
+- **Sharp**를 이용한 효율적인 온디맨드 이미지 처리 시스템 구축
 
 ## 🔍 프로젝트 시연
 
 ### 메인 페이지
-
 <img src="./screenshots/메인페이지.PNG" alt="메인 페이지" width="1000">
 
 ### 피드
-
 <img src="./screenshots/피드.gif" alt="피드 기능 시연" width="900">
 
 ### 오운완 (게시글) 작성
-
 <img src="./screenshots/오운완작성.gif" alt="오운완 기록 작성 시연" width="900">
 
-### 주요 페이지 및 기능 시연
-
+### 주요 페이지 및 기능 시연 (프로필, 장소, 모달 등)
 <img src="./screenshots/프로필,%20장소페이지,%20오운완모달,%20댓글%20등.gif" alt="주요 기능 시연" width="900">
 
-### 실시간 알림 & 통계
-
+### 실시간 알림 & 바디로그 & 통계
 <p align="center">
-  <img src="./screenshots/알림.gif" width="450">
-  <img src="./screenshots/통계.gif" width="450">
+  <img src="./screenshots/알림.gif" width="300">
+  <img src="./screenshots/바디로그.gif" width="300">
+  <img src="./screenshots/통계.gif" width="300">
 </p>
 
 ## 💡 설치 및 실행 방법
 
-### 백엔드 실행 (workout-archive-be)
+### 백엔드 설정 (workout-archive-be)
 ```bash
 cd workout-archive-be
 npm install
-# .env 설정 후
+# .env 설정 (DB 연결 정보 등)
 npm run dev
 ```
 
-### 프론트엔드 실행 (workout-archive-fe)
+### 프론트엔드 설정 (workout-archive-fe)
 ```bash
 cd workout-archive-fe
 npm install
+# .env 설정
 npm start
 ```
 
 ## 📫 연락처
-
 - **GitHub**: [https://github.com/HHOWI](https://github.com/HHOWI)
-- **Repository**: [https://github.com/HHOWI/workout-archive](https://github.com/HHOWI/workout-archive)
+- **Project URL**: [https://github.com/HHOWI/workout-archive](https://github.com/HHOWI/workout-archive)
 
 ---
 🙏 감사합니다.
