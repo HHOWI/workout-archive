@@ -3,6 +3,12 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 export type MessageRole = 'user' | 'ai' | 'loading';
 export type ResponseType = 'text' | 'table' | 'action' | 'confirm' | 'error';
 
+export interface TableColumn {
+  key: string;
+  label: string;
+  type: string;
+}
+
 export interface AIChatMessage {
   id: string;
   role: MessageRole;
@@ -11,6 +17,10 @@ export interface AIChatMessage {
   confirmPayload?: {
     toolName: string;
     params: Record<string, unknown>;
+  };
+  tableData?: {
+    columns: TableColumn[];
+    rows: unknown[][];
   };
   timestamp: number;
 }

@@ -1,10 +1,16 @@
 import { authAPI } from './axiosConfig';
 import { AIChatMessage } from '../store/slices/chatSlice';
 
+export interface TableColumn {
+  key: string;
+  label: string;
+  type: string;
+}
+
 export interface AIChatResponse {
   type: 'text' | 'table' | 'action' | 'confirm' | 'error';
   text: string;
-  columns?: string[];
+  columns?: TableColumn[];
   rows?: unknown[][];
   toolName?: string;
   params?: Record<string, unknown>;

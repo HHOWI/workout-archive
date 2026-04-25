@@ -39,6 +39,47 @@ const Bubble = styled.div<{ isUser: boolean; isError: boolean }>`
   white-space: pre-wrap;
 `;
 
+const TableWrapper = styled.div`
+  max-width: 100%;
+  overflow-x: auto;
+  margin-top: 6px;
+  border-radius: 8px;
+  border: 1px solid ${theme.border};
+  font-size: 13px;
+`;
+
+const Table = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  white-space: nowrap;
+`;
+
+const Th = styled.th`
+  padding: 7px 12px;
+  background: #f0f4fa;
+  color: ${theme.textLight};
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 1px solid ${theme.border};
+`;
+
+const Td = styled.td`
+  padding: 7px 12px;
+  color: ${theme.text};
+  border-bottom: 1px solid ${theme.border};
+
+  tr:last-child & {
+    border-bottom: none;
+  }
+`;
+
+const EmptyRow = styled.div`
+  padding: 12px;
+  text-align: center;
+  color: ${theme.textMuted};
+  font-size: 13px;
+`;
+
 const LoadingDots = styled.div`
   display: flex;
   gap: 4px;
@@ -72,12 +113,41 @@ const ChatMessage: React.FC<Props> = ({ message, onConfirm, onCancel, confirmDon
   const isUser = message.role === 'user';
   const isError = message.responseType === 'error';
   const isConfirm = message.responseType === 'confirm';
+  const isTable = message.responseType === 'table' && message.tableData;
 
   return (
     <Wrapper isUser={isUser}>
-      <Bubble isUser={isUser} isError={isError}>
-        {message.text}
-      </Bubble>
+      {message.text && (
+        <Bubble isUser={isUser} isError={isError}>
+          {message.text}
+        </Bubble>
+      )}
+      {isTable && (
+        <TableWrapper>
+          {message.tableData!.rows.length === 0 ? (
+            <EmptyRow>데이터가 없습니다</EmptyRow>
+          ) : (
+            <Table>
+              <thead>
+                <tr>
+                  {message.tableData!.columns.map((col) => (
+                    <Th key={col.key}>{col.label}</Th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {message.tableData!.rows.map((row, i) => (
+                  <tr key={i}>
+                    {message.tableData!.columns.map((col, j) => (
+                      <Td key={col.key}>{String((row as unknown as Record<string, unknown>)[col.key] ?? (row as unknown[])[j] ?? '')}</Td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </TableWrapper>
+      )}
       {isConfirm && message.confirmPayload && (
         <ChatConfirmButtons
           onConfirm={() =>

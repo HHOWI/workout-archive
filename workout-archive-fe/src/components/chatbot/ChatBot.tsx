@@ -160,11 +160,15 @@ const ChatBot: React.FC = () => {
       const aiMsg: AIChatMessage = {
         id: uuidv4(),
         role: 'ai',
-        text: res.text,
+        text: res.text || (res.type === 'table' ? `${res.rows?.length ?? 0}건의 데이터` : ''),
         responseType: res.type,
         confirmPayload:
           res.type === 'confirm' && res.toolName && res.params
             ? { toolName: res.toolName, params: res.params }
+            : undefined,
+        tableData:
+          res.type === 'table' && res.columns
+            ? { columns: res.columns, rows: res.rows ?? [] }
             : undefined,
         timestamp: Date.now(),
       };
