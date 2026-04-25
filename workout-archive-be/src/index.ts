@@ -24,6 +24,7 @@ import { UserCleanupScheduler } from "./batch/userCleanupScheduler";
 import { createServer } from "http";
 import { SocketServerManager } from "./socket/SocketServer";
 import FeedRouter from "./routes/FeedRouter";
+import aiRouter from "./routes/AiRouter";
 
 // Express 앱 생성
 const app = express();
@@ -63,6 +64,7 @@ app.use("/workouts", CommentRouter);
 app.use("/follow", FollowRouter);
 app.use("/notifications", NotificationRouter);
 app.use("/feed", FeedRouter);
+app.use("/ai", aiRouter);
 
 app.use(GlobalErrorHandler);
 
