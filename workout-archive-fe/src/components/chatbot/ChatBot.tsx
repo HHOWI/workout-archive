@@ -7,7 +7,7 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import CloseIcon from '@mui/icons-material/Close';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import { RootState, AppDispatch } from '../../store/store';
-import { addMessage, clearMessages, setOpen, AIChatMessage } from '../../store/slices/chatSlice';
+import { addMessage, clearMessages, setOpen, markConfirmed, AIChatMessage } from '../../store/slices/chatSlice';
 import { sendChatMessage, confirmChatAction } from '../../api/ai';
 import { theme, media } from '../../styles/theme';
 import ChatMessage from './ChatMessage';
@@ -122,7 +122,7 @@ const ChatBot: React.FC = () => {
   const { messages, isOpen } = useSelector((state: RootState) => state.chat);
   const bottomRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [confirmedIds, setConfirmedIds] = React.useState<Set<string>>(new Set());
+  const confirmedIds = useSelector((state: RootState) => state.chat.confirmedMessageIds);
 
   const allMessages = messages.length === 0 ? [INITIAL_MESSAGE] : messages;
 
@@ -134,7 +134,7 @@ const ChatBot: React.FC = () => {
     const lower = text.trim().toLowerCase();
 
     const lastConfirmMsg = [...messages].reverse().find((m) => m.responseType === 'confirm');
-    if (lastConfirmMsg && lastConfirmMsg.confirmPayload && !confirmedIds.has(lastConfirmMsg.id)) {
+    if (lastConfirmMsg && lastConfirmMsg.confirmPayload && !confirmedIds.includes(lastConfirmMsg.id)) {
       if (CONFIRM_KEYWORDS.includes(lower)) {
         await handleConfirm(lastConfirmMsg.confirmPayload.toolName, lastConfirmMsg.confirmPayload.params, lastConfirmMsg.id);
         return;
@@ -145,6 +145,7 @@ const ChatBot: React.FC = () => {
       }
     }
 
+    const historyBeforeSend = messages;
     const userMsg: AIChatMessage = {
       id: uuidv4(),
       role: 'user',
@@ -155,7 +156,7 @@ const ChatBot: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const res = await sendChatMessage(text, messages);
+      const res = await sendChatMessage(text, historyBeforeSend);
       const aiMsg: AIChatMessage = {
         id: uuidv4(),
         role: 'ai',
@@ -188,7 +189,7 @@ const ChatBot: React.FC = () => {
     params: Record<string, unknown>,
     msgId: string
   ) => {
-    setConfirmedIds((prev) => new Set(prev).add(msgId));
+    dispatch(markConfirmed(msgId));
     setIsLoading(true);
     try {
       const res = await confirmChatAction(toolName, params);
@@ -217,7 +218,7 @@ const ChatBot: React.FC = () => {
   };
 
   const handleCancel = (msgId: string) => {
-    setConfirmedIds((prev) => new Set(prev).add(msgId));
+    dispatch(markConfirmed(msgId));
     dispatch(
       addMessage({
         id: uuidv4(),
@@ -283,7 +284,7 @@ const ChatBot: React.FC = () => {
                     handleConfirm(toolName, params, msg.id)
                   }
                   onCancel={() => handleCancel(msg.id)}
-                  confirmDone={confirmedIds.has(msg.id)}
+                  confirmDone={confirmedIds.includes(msg.id)}
                 />
               ))}
               {isLoading && (

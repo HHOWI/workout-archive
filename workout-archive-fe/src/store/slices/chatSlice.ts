@@ -18,6 +18,7 @@ export interface AIChatMessage {
 interface ChatState {
   messages: AIChatMessage[];
   isOpen: boolean;
+  confirmedMessageIds: string[];
 }
 
 const MAX_MESSAGES = 50;
@@ -25,6 +26,7 @@ const MAX_MESSAGES = 50;
 const initialState: ChatState = {
   messages: [],
   isOpen: false,
+  confirmedMessageIds: [],
 };
 
 const chatSlice = createSlice({
@@ -39,12 +41,18 @@ const chatSlice = createSlice({
     },
     clearMessages(state) {
       state.messages = [];
+      state.confirmedMessageIds = [];
     },
     setOpen(state, action: PayloadAction<boolean>) {
       state.isOpen = action.payload;
     },
+    markConfirmed(state, action: PayloadAction<string>) {
+      if (!state.confirmedMessageIds.includes(action.payload)) {
+        state.confirmedMessageIds.push(action.payload);
+      }
+    },
   },
 });
 
-export const { addMessage, clearMessages, setOpen } = chatSlice.actions;
+export const { addMessage, clearMessages, setOpen, markConfirmed } = chatSlice.actions;
 export default chatSlice.reducer;
