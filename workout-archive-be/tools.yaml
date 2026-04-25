@@ -578,7 +578,7 @@ tools:
 
   - name: get_feed
     description: 현재 로그인한 사용자의 피드(팔로우한 사용자·장소의 최신 운동 기록)를 조회한다. 인증 필요.
-    endpoint: "GET /feed/"
+    endpoint: "GET /feed"
     response_type: table
     response_mapping:
       data_path: "records"
