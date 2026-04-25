@@ -82,7 +82,7 @@ export class UserCleanupScheduler {
       // 미인증 계정이면서 생성 시간이 기준 시간보다 오래된 사용자들을 찾음
       const unverifiedUsers = await userRepo.find({
         where: {
-          isVerified: 0,
+          isVerified: false,
           userCreatedAt: LessThan(threshold),
         },
       });

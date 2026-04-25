@@ -122,7 +122,7 @@ export class WorkoutCalendarService {
     const workouts = await this.workoutRepository.find({
       where: {
         user: { userSeq },
-        isDeleted: 0,
+        isDeleted: false,
         recordDate: Between(startDate, endDate),
       },
       select: ["recordDate", "workoutOfTheDaySeq"],
@@ -158,7 +158,7 @@ export class WorkoutCalendarService {
       const workout = await this.workoutRepository.findOne({
         where: {
           user: { userSeq },
-          isDeleted: 0,
+          isDeleted: false,
           recordDate: Between(
             new Date(currentDate.setHours(0, 0, 0, 0)),
             new Date(currentDate.setHours(23, 59, 59, 999))
@@ -186,7 +186,7 @@ export class WorkoutCalendarService {
     const workouts = await this.workoutRepository.find({
       where: {
         user: { userSeq },
-        isDeleted: 0,
+        isDeleted: false,
       },
       select: ["recordDate"],
       order: {

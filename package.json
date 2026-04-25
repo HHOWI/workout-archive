@@ -9,7 +9,8 @@
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "watch": "tsc -w",
-    "seed": "ts-node src/seed.ts"
+    "seed": "ts-node src/seed.ts",
+    "init": "ts-node scripts/generateSecrets.ts"
   },
   "keywords": [],
   "author": "",
@@ -36,7 +37,7 @@
     "multer": "^1.4.5-lts.1",
     "node-cron": "^3.0.3",
     "nodemailer": "^6.10.0",
-    "oracledb": "^6.7.1",
+    "pg": "^8.20.0",
     "reflect-metadata": "^0.2.2",
     "sharp": "^0.33.5",
     "socket.io": "^4.8.1",
@@ -57,7 +58,7 @@
     "@types/node": "^22.13.1",
     "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^6.4.17",
-    "@types/oracledb": "^6.5.3",
+    "@types/pg": "^8.20.0",
     "@types/sharp": "^0.31.1",
     "@types/xml2js": "^0.4.14",
     "ts-node": "^10.9.2",

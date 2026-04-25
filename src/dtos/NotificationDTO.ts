@@ -22,8 +22,8 @@ export class NotificationDTO {
   /** 발신자 프로필 이미지 URL */
   senderProfileImageUrl?: string;
 
-  /** 읽음 상태 (0: 읽지 않음, 1: 읽음) */
-  isRead!: number;
+  /** 읽음 상태 (false: 읽지 않음, true: 읽음) */
+  isRead!: boolean;
 
   /** 알림 생성 일시 */
   notificationCreatedAt!: Date;

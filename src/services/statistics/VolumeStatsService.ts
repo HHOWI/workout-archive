@@ -62,7 +62,7 @@ export class VolumeStatsService {
           startDate,
           endDate,
         })
-        .andWhere("workout.isDeleted = 0")
+        .andWhere("workout.isDeleted = :isDeleted", { isDeleted: false })
         .getMany();
 
       // 볼륨 데이터 계산

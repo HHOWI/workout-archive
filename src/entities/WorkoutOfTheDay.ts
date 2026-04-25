@@ -39,8 +39,8 @@ export class WorkoutOfTheDay {
 
   @Column({
     name: "WORKOUT_LIKE_COUNT",
-    type: "number",
-    default: () => 0,
+    type: "integer",
+    default: 0,
   })
   workoutLikeCount!: number;
 
@@ -62,10 +62,10 @@ export class WorkoutOfTheDay {
 
   @Column({
     name: "IS_DELETED",
-    type: "number",
-    default: () => 0,
+    type: "boolean",
+    default: false,
   })
-  isDeleted!: number;
+  isDeleted!: boolean;
 
   @ManyToOne(() => WorkoutPlace, { onDelete: "SET NULL" })
   @JoinColumn({ name: "WORKOUT_PLACE_SEQ" })

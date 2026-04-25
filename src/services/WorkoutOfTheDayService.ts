@@ -228,7 +228,7 @@ export class WorkoutOfTheDayService {
       .leftJoin("workout.user", "user")
       .addSelect(["user.userNickname", "user.profileImageUrl"])
       .where("user.userNickname = :nickname", { nickname })
-      .andWhere("workout.isDeleted = :isDeleted", { isDeleted: 0 })
+      .andWhere("workout.isDeleted = :isDeleted", { isDeleted: false })
       .leftJoin("workout.workoutPlace", "workoutPlace")
       .addSelect("workoutPlace.placeName")
       .orderBy("workout.recordDate", "DESC")
@@ -304,7 +304,7 @@ export class WorkoutOfTheDayService {
       .where("workout.workoutOfTheDaySeq = :workoutOfTheDaySeq", {
         workoutOfTheDaySeq,
       })
-      .andWhere("workout.isDeleted = :isDeleted", { isDeleted: 0 })
+      .andWhere("workout.isDeleted = :isDeleted", { isDeleted: false })
       .orderBy("workoutDetails.workoutDetailSeq", "ASC")
       .getOne();
 
@@ -377,7 +377,7 @@ export class WorkoutOfTheDayService {
     const count = await this.workoutRepository.count({
       where: {
         user: { userSeq: user.userSeq },
-        isDeleted: 0,
+        isDeleted: false,
       },
     });
 
@@ -397,7 +397,7 @@ export class WorkoutOfTheDayService {
       .select(["workout.workoutOfTheDaySeq", "workout.recordDate"])
       .leftJoin("workout.user", "user")
       .where("user.userSeq = :userSeq", { userSeq })
-      .andWhere("workout.isDeleted = :isDeleted", { isDeleted: 0 })
+      .andWhere("workout.isDeleted = :isDeleted", { isDeleted: false })
       .orderBy("workout.recordDate", "DESC")
       .take(10)
       .getMany();
@@ -417,7 +417,7 @@ export class WorkoutOfTheDayService {
       .leftJoin("workout.user", "user")
       .addSelect(["user.userNickname", "user.profileImageUrl"])
       .where("user.userSeq = :userSeq", { userSeq })
-      .andWhere("workout.isDeleted = :isDeleted", { isDeleted: 0 })
+      .andWhere("workout.isDeleted = :isDeleted", { isDeleted: false })
       .andWhere("workout.workoutOfTheDaySeq IN (:...workoutIds)", {
         workoutIds,
       })
@@ -481,7 +481,7 @@ export class WorkoutOfTheDayService {
     }
 
     // 소프트 삭제 처리
-    workout.isDeleted = 1;
+    workout.isDeleted = true;
     await this.workoutRepository.save(workout);
   }
 
@@ -520,7 +520,7 @@ export class WorkoutOfTheDayService {
       .where("workout.workoutOfTheDaySeq = :workoutOfTheDaySeq", {
         workoutOfTheDaySeq,
       })
-      .andWhere("workout.isDeleted = :isDeleted", { isDeleted: 0 })
+      .andWhere("workout.isDeleted = :isDeleted", { isDeleted: false })
       .getOne();
 
     // 예외 처리
@@ -574,7 +574,7 @@ export class WorkoutOfTheDayService {
       // 30일 이상 지난 소프트 삭제된 워크아웃 조회
       const workoutsToDelete = await this.workoutRepository.find({
         where: {
-          isDeleted: 1,
+          isDeleted: true,
           // 소프트 삭제 날짜를 따로 저장하지 않으므로 recordDate 기준으로 판단
           // 이상적으로는 deletedAt 필드를 추가해야 하지만 현재 상황에서는 recordDate로 대체
           recordDate: LessThan(thirtyDaysAgo),
@@ -730,7 +730,7 @@ export class WorkoutOfTheDayService {
       .leftJoin("workout.workoutPlace", "place")
       .addSelect("place.placeName")
       .where("place.workoutPlaceSeq = :placeSeq", { placeSeq })
-      .andWhere("workout.isDeleted = :isDeleted", { isDeleted: 0 })
+      .andWhere("workout.isDeleted = :isDeleted", { isDeleted: false })
       .orderBy("workout.recordDate", "DESC")
       .addOrderBy("workout.workoutOfTheDaySeq", "DESC"); // 2차 정렬 기준으로 ID 사용
 
@@ -818,7 +818,7 @@ export class WorkoutOfTheDayService {
     const count = await this.workoutRepository.count({
       where: {
         workoutPlace: { workoutPlaceSeq: place.workoutPlaceSeq },
-        isDeleted: 0,
+        isDeleted: false,
       },
     });
 

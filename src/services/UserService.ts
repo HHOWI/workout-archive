@@ -154,7 +154,7 @@ export class UserService {
     }
 
     // 이메일 인증 확인
-    if (user.isVerified === 0) {
+    if (!user.isVerified) {
       throw new CustomError(
         "이메일 인증이 필요합니다.",
         403,

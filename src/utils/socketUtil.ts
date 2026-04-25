@@ -40,7 +40,7 @@ export class SocketUtil {
         notificationContent: "알림이 읽음 처리되었습니다.",
         senderSeq: 0,
         senderNickname: "System",
-        isRead: 1,
+        isRead: true,
         notificationCreatedAt: new Date(),
         notificationSeqs, // 읽음 처리된 알림 ID 목록
       });
@@ -62,7 +62,7 @@ export class SocketUtil {
         notificationContent: "모든 알림이 읽음 처리되었습니다.",
         senderSeq: 0,
         senderNickname: "System",
-        isRead: 1,
+        isRead: true,
         notificationCreatedAt: new Date(),
       });
     } catch (error) {
@@ -87,7 +87,7 @@ export class SocketUtil {
         notificationContent: "알림이 삭제되었습니다.",
         senderSeq: 0,
         senderNickname: "System",
-        isRead: 1,
+        isRead: true,
         notificationCreatedAt: new Date(),
       });
     } catch (error) {
@@ -108,7 +108,7 @@ export class SocketUtil {
         notificationContent: "모든 알림이 삭제되었습니다.",
         senderSeq: 0,
         senderNickname: "System",
-        isRead: 1,
+        isRead: true,
         notificationCreatedAt: new Date(),
       });
     } catch (error) {

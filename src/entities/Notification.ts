@@ -49,8 +49,8 @@ export class Notification {
   @JoinColumn({ name: "SENDER_USER_SEQ" })
   sender!: User;
 
-  @Column({ name: "IS_READ", type: "number", default: 0 }) // 0 = false, 1 = true
-  isRead!: number;
+  @Column({ name: "IS_READ", type: "boolean", default: false })
+  isRead!: boolean;
 
   @CreateDateColumn({
     name: "NOTIFICATION_CREATED_AT",

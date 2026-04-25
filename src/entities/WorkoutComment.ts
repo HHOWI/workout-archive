@@ -32,7 +32,7 @@ export class WorkoutComment {
   })
   commentContent!: string;
 
-  @Column({ name: "COMMENT_LIKES", type: "number", default: () => 0 })
+  @Column({ name: "COMMENT_LIKES", type: "integer", default: 0 })
   commentLikes!: number;
 
   @CreateDateColumn({

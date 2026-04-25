@@ -58,7 +58,7 @@ export class CommentService {
     workoutOfTheDaySeq: number
   ): Promise<WorkoutOfTheDay> {
     const workout = await this.workoutRepository.findOne({
-      where: { workoutOfTheDaySeq, isDeleted: 0 },
+      where: { workoutOfTheDaySeq, isDeleted: false },
       relations: ["user"],
     });
     if (!workout) {

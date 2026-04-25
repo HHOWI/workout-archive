@@ -68,7 +68,7 @@ export class WeightStatsService {
           exerciseSeq: exercise.exerciseSeq,
         })
         .andWhere("workout.user.userSeq = :userSeq", { userSeq })
-        .andWhere("workout.isDeleted = :isDeleted", { isDeleted: 0 })
+        .andWhere("workout.isDeleted = :isDeleted", { isDeleted: false })
         .andWhere("workout.recordDate BETWEEN :startDate AND :endDate", {
           startDate,
           endDate,

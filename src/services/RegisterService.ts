@@ -91,17 +91,30 @@ export class RegisterService {
     // 인증 토큰 생성
     const verificationToken = this.generateVerificationToken();
 
-    // 사용자 생성
-    const user = this.createUserEntity(data, hashedPassword, verificationToken);
-    await this.userRepo.save(user);
+    // 트랜잭션 적용: 사용자 저장과 메일 발송을 하나의 단위로 묶음
+    return await AppDataSource.transaction(async (transactionalEntityManager) => {
+      // 사용자 생성 및 저장 (트랜잭션 매니저 사용)
+      const user = this.createUserEntity(data, hashedPassword, verificationToken);
+      const savedUser = await transactionalEntityManager.save(user);
 
-    // 인증 메일 발송 - EmailService 사용
-    await this.emailService.sendVerificationEmail(
-      data.userEmail,
-      verificationToken
-    );
+      try {
+        // 인증 메일 발송
+        await this.emailService.sendVerificationEmail(
+          data.userEmail,
+          verificationToken
+        );
+      } catch (error) {
+        // 메일 발송 실패 시 예외를 던져 트랜잭션 롤백 유도
+        console.error("인증 메일 발송 실패:", error);
+        throw new CustomError(
+          "인증 메일 발송에 실패하여 회원가입이 취소되었습니다. 잠시 후 다시 시도해 주세요.",
+          500,
+          "RegisterService.registerUser"
+        );
+      }
 
-    return user;
+      return savedUser;
+    });
   }
 
   /**
@@ -129,7 +142,7 @@ export class RegisterService {
       userNickname: data.userNickname,
       userEmail: data.userEmail,
       verificationToken: verificationToken,
-      isVerified: 0,
+      isVerified: false,
     });
   }
 
@@ -148,7 +161,7 @@ export class RegisterService {
       );
     }
 
-    user.isVerified = 1;
+    user.isVerified = true;
     user.verificationToken = null;
     await this.userRepo.save(user);
   }

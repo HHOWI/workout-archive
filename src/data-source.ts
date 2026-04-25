@@ -7,14 +7,15 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const AppDataSource = new DataSource({
-  type: "oracle",
+  type: "postgres",
   host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT || "1521"),
+  port: parseInt(process.env.DB_PORT || "5432"),
   username: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
-  sid: process.env.DB_SID,
+  database: process.env.DB_NAME,
   synchronize: true,
   logging: true,
   entities: ["src/entities/**/*.ts"],
   namingStrategy: new SnakeNamingStrategy(), // 인스턴스를 직접 설정
 });
+

@@ -199,7 +199,7 @@ export class FeedService {
       .addSelect(["user.userSeq", "user.userNickname", "user.profileImageUrl"])
       .leftJoin("workout.workoutPlace", "workoutPlace")
       .addSelect(["workoutPlace.workoutPlaceSeq", "workoutPlace.placeName"])
-      .where("workout.isDeleted = :isDeleted", { isDeleted: 0 })
+      .where("workout.isDeleted = :isDeleted", { isDeleted: false })
       // 자신의 게시물은 피드에서 제외
       .andWhere("user.userSeq != :currentUserSeq", { currentUserSeq: userSeq })
       // 팔로우 조건 추가

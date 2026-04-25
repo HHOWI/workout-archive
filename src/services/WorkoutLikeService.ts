@@ -46,7 +46,7 @@ export class WorkoutLikeService {
     const workout = await this.workoutRepository.findOne({
       where: {
         workoutOfTheDaySeq,
-        isDeleted: 0,
+        isDeleted: false,
       },
       relations: ["user"],
     });

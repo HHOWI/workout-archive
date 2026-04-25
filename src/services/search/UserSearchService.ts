@@ -45,7 +45,7 @@ export class UserSearchService {
     const query = this.userRepository
       .createQueryBuilder("user")
       .select(["user.userSeq", "user.userNickname", "user.profileImageUrl"])
-      .where("user.isVerified = :isVerified", { isVerified: 1 })
+      .where("user.isVerified = :isVerified", { isVerified: true })
       .andWhere("user.userNickname LIKE :keyword", {
         keyword: `%${searchKeyword}%`,
       });

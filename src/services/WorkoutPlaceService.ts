@@ -64,7 +64,7 @@ export class WorkoutPlaceService {
       .createQueryBuilder("workout")
       .innerJoinAndSelect("workout.workoutPlace", "place")
       .where("workout.user.userSeq = :userSeq", { userSeq })
-      .andWhere("workout.isDeleted = 0")
+      .andWhere("workout.isDeleted = :isDeleted", { isDeleted: false })
       .orderBy("workout.recordDate", "DESC")
       .take(20)
       .getMany();

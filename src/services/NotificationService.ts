@@ -129,7 +129,7 @@ export class NotificationService {
     notification.notificationContent = dto.notificationContent;
     notification.receiver = receiver;
     notification.sender = sender;
-    notification.isRead = 0;
+    notification.isRead = false;
     return notification;
   }
 
@@ -324,7 +324,7 @@ export class NotificationService {
     return await this.notificationRepo.count({
       where: {
         receiver: { userSeq },
-        isRead: 0,
+        isRead: false,
       },
     });
   }
@@ -349,7 +349,7 @@ export class NotificationService {
       .leftJoinAndSelect("notification.workoutComment", "workoutComment")
       .leftJoinAndSelect("notification.replyComment", "replyComment")
       .where("notification.receiver.userSeq = :userSeq", { userSeq })
-      .andWhere("notification.isRead = :isRead", { isRead: 0 })
+      .andWhere("notification.isRead = :isRead", { isRead: false })
       .orderBy("notification.notificationSeq", "DESC");
 
     // 커서가 있으면 해당 커서 이후의 데이터만 가져옴
@@ -397,7 +397,7 @@ export class NotificationService {
       .createQueryBuilder("notification")
       .innerJoinAndSelect("notification.receiver", "receiver")
       .where("receiver.userSeq = :userSeq", { userSeq })
-      .andWhere("notification.isRead = :isRead", { isRead: 0 })
+      .andWhere("notification.isRead = :isRead", { isRead: false })
       .getMany();
   }
 
@@ -410,7 +410,7 @@ export class NotificationService {
   ): Promise<void> {
     // 읽음 상태 변경
     for (const notification of notifications) {
-      notification.isRead = 1;
+      notification.isRead = true;
     }
 
     // 변경된 알림 저장
