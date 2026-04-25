@@ -87,7 +87,7 @@ export const TestDataSeed = async (dataSource: DataSource) => {
         user,
         workoutPlace: randomPlace,
         recordDate: date,
-        workoutDiary: `${mainType} 웨이트 트레이닝 완료! 장소: ${randomPlace.placeName}. 오운완!`,
+        workoutDiary: `${mainType} 웨이트 트레이닝 완료! 🔥`,
         workoutPhoto: `https://picsum.photos/seed/${user.userId}${d}/800/600`,
         mainExerciseType: mainType,
         isDeleted: false,

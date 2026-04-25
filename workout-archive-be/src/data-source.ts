@@ -6,6 +6,8 @@ import dotenv from "dotenv";
 // 환경변수 로드
 dotenv.config();
 
+console.log("DB_PASSWORD loaded:", process.env.DB_PASSWORD ? "YES (Type: " + typeof process.env.DB_PASSWORD + ")" : "NO");
+
 export const AppDataSource = new DataSource({
   type: "postgres",
   host: process.env.DB_HOST,
