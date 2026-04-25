@@ -612,7 +612,7 @@ tools:
     endpoint: "GET /statistics/body-log-stats"
     response_type: table
     response_mapping:
-      data_path: "stats"
+      data_path: "bodyWeight"
     params:
       period:
         type: string
@@ -628,19 +628,19 @@ tools:
       - key: date
         label: "날짜"
         type: date
-      - key: weight
+      - key: value
         label: "체중 (kg)"
         type: number
-      - key: bodyFat
-        label: "체지방률 (%)"
-        type: number
+      - key: isEstimated
+        label: "추정값 여부"
+        type: string
 
   - name: get_exercise_weight_stats
     description: 현재 로그인한 사용자의 특정 운동 종목 무게 변화 통계를 조회한다. 인증 필요.
     endpoint: "GET /statistics/exercise-weight-stats"
     response_type: table
     response_mapping:
-      data_path: "stats"
+      data_path: "exercises"
     params:
       period:
         type: string
@@ -662,22 +662,17 @@ tools:
         description: "조회할 운동 종목 ID 목록 (최소 1개, 최대 5개)"
         required: true
     columns:
-      - key: date
-        label: "날짜"
-        type: date
       - key: exerciseName
         label: "운동명"
         type: string
-      - key: weight
-        label: "무게 (kg)"
-        type: number
+      - key: exerciseType
+        label: "운동 유형"
+        type: string
 
   - name: get_cardio_stats
     description: 현재 로그인한 사용자의 유산소 운동 통계를 조회한다. 인증 필요.
     endpoint: "GET /statistics/cardio-stats"
     response_type: table
-    response_mapping:
-      data_path: "stats"
     params:
       period:
         type: string
@@ -689,22 +684,19 @@ tools:
         description: "조회할 유산소 운동 종목 ID 목록 (선택사항)"
         required: false
     columns:
-      - key: date
-        label: "날짜"
-        type: date
       - key: exerciseName
         label: "운동명"
         type: string
-      - key: duration
-        label: "시간 (분)"
-        type: number
+      - key: exerciseType
+        label: "운동 유형"
+        type: string
 
   - name: get_body_part_volume_stats
     description: 현재 로그인한 사용자의 신체 부위별 운동 볼륨 통계를 조회한다. 인증 필요.
     endpoint: "GET /statistics/body-part-volume-stats"
     response_type: table
     response_mapping:
-      data_path: "stats"
+      data_path: "volumeData"
     params:
       period:
         type: string
@@ -725,10 +717,7 @@ tools:
       - key: date
         label: "날짜"
         type: date
-      - key: bodyPart
-        label: "부위"
-        type: string
-      - key: volume
+      - key: value
         label: "볼륨 (kg)"
         type: number
 
