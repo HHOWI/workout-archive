@@ -1,68 +1,71 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
-export type MessageRole = 'user' | 'ai' | 'loading';
-export type ResponseType = 'text' | 'table' | 'action' | 'confirm' | 'error';
+export type MessageRole = 'user' | 'ai' | 'loading'
+export type ResponseType =
+  | 'text' | 'table' | 'raw' | 'summary'
+  | 'action' | 'confirm' | 'clarify' | 'error' | 'multi'
 
-export interface TableColumn {
-  key: string;
-  label: string;
-  type: string;
+export interface ColumnDefinition {
+  key: string
+  label: string
+  type?: 'string' | 'number' | 'date' | 'badge'
 }
 
 export interface AIChatMessage {
-  id: string;
-  role: MessageRole;
-  text: string;
-  responseType?: ResponseType;
+  id: string
+  role: MessageRole
+  text: string
+  responseType?: ResponseType
   confirmPayload?: {
-    toolName: string;
-    params: Record<string, unknown>;
-  };
+    toolName: string
+    params: Record<string, unknown>
+    confirmToken?: string
+  }
   tableData?: {
-    columns: TableColumn[];
-    rows: unknown[][];
-  };
-  timestamp: number;
+    columns: ColumnDefinition[]
+    rows: Record<string, unknown>[]
+  }
+  timestamp: number
 }
 
 interface ChatState {
-  messages: AIChatMessage[];
-  isOpen: boolean;
-  confirmedMessageIds: string[];
+  messages: AIChatMessage[]
+  isOpen: boolean
+  confirmedMessageIds: string[]
 }
 
-const MAX_MESSAGES = 50;
+const MAX_MESSAGES = 50
 
 const initialState: ChatState = {
   messages: [],
   isOpen: false,
   confirmedMessageIds: [],
-};
+}
 
 const chatSlice = createSlice({
   name: 'chat',
   initialState,
   reducers: {
     addMessage(state, action: PayloadAction<AIChatMessage>) {
-      state.messages.push(action.payload);
+      state.messages.push(action.payload)
       if (state.messages.length > MAX_MESSAGES) {
-        state.messages.shift();
+        state.messages.shift()
       }
     },
     clearMessages(state) {
-      state.messages = [];
-      state.confirmedMessageIds = [];
+      state.messages = []
+      state.confirmedMessageIds = []
     },
     setOpen(state, action: PayloadAction<boolean>) {
-      state.isOpen = action.payload;
+      state.isOpen = action.payload
     },
     markConfirmed(state, action: PayloadAction<string>) {
       if (!state.confirmedMessageIds.includes(action.payload)) {
-        state.confirmedMessageIds.push(action.payload);
+        state.confirmedMessageIds.push(action.payload)
       }
     },
   },
-});
+})
 
-export const { addMessage, clearMessages, setOpen, markConfirmed } = chatSlice.actions;
-export default chatSlice.reducer;
+export const { addMessage, clearMessages, setOpen, markConfirmed } = chatSlice.actions
+export default chatSlice.reducer

@@ -39,4 +39,21 @@ describe('chatSlice', () => {
     expect(state.messages).toHaveLength(50);
     expect(state.messages[0].text).toBe('1');
   });
+
+  it('stores confirmToken in confirmPayload', () => {
+    const state = chatReducer(
+      undefined,
+      addMessage(
+        makeMsg({
+          responseType: 'confirm',
+          confirmPayload: {
+            toolName: 'delete_workout_record',
+            params: { workoutOfTheDaySeq: 1 },
+            confirmToken: 'token-abc',
+          },
+        })
+      )
+    )
+    expect(state.messages[0].confirmPayload?.confirmToken).toBe('token-abc')
+  })
 });
