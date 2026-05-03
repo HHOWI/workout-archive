@@ -1,17 +1,17 @@
-import React, { useEffect, useRef } from 'react';
-import styled from '@emotion/styled';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useDispatch, useSelector } from 'react-redux';
-import { v4 as uuidv4 } from 'uuid';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
-import CloseIcon from '@mui/icons-material/Close';
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import { RootState, AppDispatch } from '../../store/store';
-import { addMessage, clearMessages, setOpen, markConfirmed, AIChatMessage } from '../../store/slices/chatSlice';
-import { sendChatMessage, confirmChatAction } from '../../api/ai';
-import { theme, media } from '../../styles/theme';
-import ChatMessage from './ChatMessage';
-import ChatInput from './ChatInput';
+import React, { useEffect, useRef } from 'react'
+import styled from '@emotion/styled'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useDispatch, useSelector } from 'react-redux'
+import { v4 as uuidv4 } from 'uuid'
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline'
+import CloseIcon from '@mui/icons-material/Close'
+import RestartAltIcon from '@mui/icons-material/RestartAlt'
+import { RootState, AppDispatch } from '../../store/store'
+import { addMessage, clearMessages, setOpen, markConfirmed, AIChatMessage } from '../../store/slices/chatSlice'
+import { sendChatMessage, confirmChatAction, AIChatResponse } from '../../api/ai'
+import { theme, media } from '../../styles/theme'
+import ChatMessage from './ChatMessage'
+import ChatInput from './ChatInput'
 
 const FAB = styled.button`
   position: fixed;
@@ -35,7 +35,7 @@ const FAB = styled.button`
     background: ${theme.primaryDark};
     transform: scale(1.05);
   }
-`;
+`
 
 const Window = styled(motion.div)`
   position: fixed;
@@ -57,7 +57,7 @@ const Window = styled(motion.div)`
     right: 16px;
     bottom: 80px;
   }
-`;
+`
 
 const Header = styled.div`
   display: flex;
@@ -68,7 +68,7 @@ const Header = styled.div`
   background: ${theme.primary};
   color: #fff;
   border-radius: 16px 16px 0 0;
-`;
+`
 
 const HeaderTitle = styled.div`
   display: flex;
@@ -76,7 +76,7 @@ const HeaderTitle = styled.div`
   gap: 8px;
   font-size: 15px;
   font-weight: 600;
-`;
+`
 
 const ClearBtn = styled.button`
   background: none;
@@ -93,7 +93,7 @@ const ClearBtn = styled.button`
     background: rgba(255, 255, 255, 0.15);
     color: #fff;
   }
-`;
+`
 
 const MessageList = styled.div`
   flex: 1;
@@ -105,133 +105,155 @@ const MessageList = styled.div`
   &::-webkit-scrollbar { width: 4px; }
   &::-webkit-scrollbar-track { background: transparent; }
   &::-webkit-scrollbar-thumb { background: ${theme.border}; border-radius: 2px; }
-`;
+`
 
-const CONFIRM_KEYWORDS = ['네', '예', 'ㅇ', 'ok', 'yes', '응', 'ㅇㅇ'];
-const CANCEL_KEYWORDS = ['아니오', '아니', 'ㄴ', 'no', '아니요', 'nope'];
+const CONFIRM_KEYWORDS = ['네', '예', 'ㅇ', 'ok', 'yes', '응', 'ㅇㅇ']
+const CANCEL_KEYWORDS  = ['아니오', '아니', 'ㄴ', 'no', '아니요', 'nope']
 
 const INITIAL_MESSAGE: AIChatMessage = {
   id: 'initial',
   role: 'ai',
   text: '안녕하세요! 운동 기록, 통계, 팔로우 등 무엇이든 물어보세요 😊',
   timestamp: Date.now(),
-};
+}
+
+type SingleResponse = Exclude<AIChatResponse, { type: 'multi' }>
+
+function getResponseText(res: SingleResponse): string {
+  switch (res.type) {
+    case 'text':    return res.content
+    case 'summary': return res.text
+    case 'action':  return res.message
+    case 'confirm': return res.message
+    case 'clarify': return res.question
+    case 'error':   return res.message
+    case 'table':   return `${res.rows.length}건의 데이터`
+    case 'raw':     return JSON.stringify(res.data)
+  }
+}
+
+function buildAiMessage(res: SingleResponse): AIChatMessage {
+  return {
+    id: uuidv4(),
+    role: 'ai',
+    text: getResponseText(res),
+    responseType: res.type,
+    confirmPayload:
+      res.type === 'confirm'
+        ? { toolName: res.toolName, params: res.params, confirmToken: res.confirmToken }
+        : undefined,
+    tableData:
+      res.type === 'table'
+        ? { columns: res.columns, rows: res.rows }
+        : undefined,
+    timestamp: Date.now(),
+  }
+}
+
+function dispatchResponse(
+  res: AIChatResponse,
+  dispatch: AppDispatch
+): void {
+  if (res.type === 'multi') {
+    for (const result of res.results) {
+      dispatch(addMessage(buildAiMessage(result)))
+    }
+  } else {
+    dispatch(addMessage(buildAiMessage(res)))
+  }
+}
 
 const ChatBot: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const { messages, isOpen } = useSelector((state: RootState) => state.chat);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const [isLoading, setIsLoading] = React.useState(false);
-  const confirmedIds = useSelector((state: RootState) => state.chat.confirmedMessageIds);
+  const dispatch    = useDispatch<AppDispatch>()
+  const { messages, isOpen } = useSelector((state: RootState) => state.chat)
+  const confirmedIds = useSelector((state: RootState) => state.chat.confirmedMessageIds)
+  const bottomRef   = useRef<HTMLDivElement>(null)
+  const [isLoading, setIsLoading] = React.useState(false)
 
-  const allMessages = messages.length === 0 ? [INITIAL_MESSAGE] : messages;
+  const allMessages = messages.length === 0 ? [INITIAL_MESSAGE] : messages
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [allMessages, isLoading]);
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [allMessages, isLoading])
 
   const handleSend = async (text: string) => {
-    const lower = text.trim().toLowerCase();
+    const lower = text.trim().toLowerCase()
 
-    const lastConfirmMsg = [...messages].reverse().find((m) => m.responseType === 'confirm');
+    const lastConfirmMsg = [...messages].reverse().find((m) => m.responseType === 'confirm')
     if (lastConfirmMsg && lastConfirmMsg.confirmPayload && !confirmedIds.includes(lastConfirmMsg.id)) {
       if (CONFIRM_KEYWORDS.includes(lower)) {
-        await handleConfirm(lastConfirmMsg.confirmPayload.toolName, lastConfirmMsg.confirmPayload.params, lastConfirmMsg.id);
-        return;
+        await handleConfirm(
+          lastConfirmMsg.confirmPayload.toolName,
+          lastConfirmMsg.confirmPayload.params,
+          lastConfirmMsg.confirmPayload.confirmToken,
+          lastConfirmMsg.id,
+        )
+        return
       }
       if (CANCEL_KEYWORDS.includes(lower)) {
-        handleCancel(lastConfirmMsg.id);
-        return;
+        handleCancel(lastConfirmMsg.id)
+        return
       }
     }
 
-    const historyBeforeSend = messages;
-    const userMsg: AIChatMessage = {
+    const historyBeforeSend = messages
+    dispatch(addMessage({
       id: uuidv4(),
       role: 'user',
       text,
       timestamp: Date.now(),
-    };
-    dispatch(addMessage(userMsg));
-    setIsLoading(true);
+    }))
+    setIsLoading(true)
 
     try {
-      const res = await sendChatMessage(text, historyBeforeSend);
-      const aiMsg: AIChatMessage = {
+      const res = await sendChatMessage(text, historyBeforeSend)
+      dispatchResponse(res, dispatch)
+    } catch {
+      dispatch(addMessage({
         id: uuidv4(),
         role: 'ai',
-        text: res.text || (res.type === 'table' ? `${res.rows?.length ?? 0}건의 데이터` : ''),
-        responseType: res.type,
-        confirmPayload:
-          res.type === 'confirm' && res.toolName && res.params
-            ? { toolName: res.toolName, params: res.params }
-            : undefined,
-        tableData:
-          res.type === 'table' && res.columns
-            ? { columns: res.columns, rows: res.rows ?? [] }
-            : undefined,
+        text: '요청 처리 중 오류가 발생했습니다.',
+        responseType: 'error',
         timestamp: Date.now(),
-      };
-      dispatch(addMessage(aiMsg));
-    } catch {
-      dispatch(
-        addMessage({
-          id: uuidv4(),
-          role: 'ai',
-          text: '요청 처리 중 오류가 발생했습니다.',
-          responseType: 'error',
-          timestamp: Date.now(),
-        })
-      );
+      }))
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleConfirm = async (
     toolName: string,
     params: Record<string, unknown>,
-    msgId: string
+    confirmToken: string | undefined,
+    msgId: string,
   ) => {
-    dispatch(markConfirmed(msgId));
-    setIsLoading(true);
+    dispatch(markConfirmed(msgId))
+    setIsLoading(true)
     try {
-      const res = await confirmChatAction(toolName, params);
-      dispatch(
-        addMessage({
-          id: uuidv4(),
-          role: 'ai',
-          text: res.text,
-          responseType: res.type,
-          timestamp: Date.now(),
-        })
-      );
+      const res = await confirmChatAction(toolName, params, confirmToken)
+      dispatchResponse(res, dispatch)
     } catch {
-      dispatch(
-        addMessage({
-          id: uuidv4(),
-          role: 'ai',
-          text: '실행 중 오류가 발생했습니다.',
-          responseType: 'error',
-          timestamp: Date.now(),
-        })
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCancel = (msgId: string) => {
-    dispatch(markConfirmed(msgId));
-    dispatch(
-      addMessage({
+      dispatch(addMessage({
         id: uuidv4(),
         role: 'ai',
-        text: '취소되었습니다.',
+        text: '실행 중 오류가 발생했습니다.',
+        responseType: 'error',
         timestamp: Date.now(),
-      })
-    );
-  };
+      }))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleCancel = (msgId: string) => {
+    dispatch(markConfirmed(msgId))
+    dispatch(addMessage({
+      id: uuidv4(),
+      role: 'ai',
+      text: '취소되었습니다.',
+      timestamp: Date.now(),
+    }))
+  }
 
   return (
     <>
@@ -284,8 +306,8 @@ const ChatBot: React.FC = () => {
                 <ChatMessage
                   key={msg.id}
                   message={msg}
-                  onConfirm={(toolName, params) =>
-                    handleConfirm(toolName, params, msg.id)
+                  onConfirm={(toolName, params, confirmToken) =>
+                    handleConfirm(toolName, params, confirmToken, msg.id)
                   }
                   onCancel={() => handleCancel(msg.id)}
                   confirmDone={confirmedIds.includes(msg.id)}
@@ -307,7 +329,7 @@ const ChatBot: React.FC = () => {
         )}
       </AnimatePresence>
     </>
-  );
-};
+  )
+}
 
-export default ChatBot;
+export default ChatBot
