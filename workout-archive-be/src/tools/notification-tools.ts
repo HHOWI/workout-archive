@@ -5,7 +5,7 @@ export const notificationTools = [
   defineTool({
     name: 'get_notifications',
     description: '현재 로그인한 사용자의 알림 목록을 조회한다. 인증 필요.',
-    endpoint: 'GET /notifications/',
+    endpoint: 'GET /notifications',
     params: z.object({}),
     responseType: 'table',
     responseMapping: { dataPath: 'notifications' },
